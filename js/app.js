@@ -611,27 +611,27 @@ const app = createApp({
 
             setTimeout(() => {
                 state.scoreModal.step = 1;
-                animateScoreValue(0, state.scoreModal.base, 800, () => {
+                animateScoreValue(0, state.scoreModal.base, 400, () => {
                     setTimeout(() => {
                         state.scoreModal.step = 2;
-                        animateScoreValue(state.scoreModal.currentScore, state.scoreModal.currentScore + state.scoreModal.savingsBonus, 800, () => {
+                        animateScoreValue(state.scoreModal.currentScore, state.scoreModal.currentScore + state.scoreModal.savingsBonus, 400, () => {
                             setTimeout(() => {
                                 state.scoreModal.step = 3;
-                                animateScoreValue(state.scoreModal.currentScore, state.scoreModal.currentScore + state.scoreModal.defenseBonus, 800, () => {
+                                animateScoreValue(state.scoreModal.currentScore, state.scoreModal.currentScore + state.scoreModal.defenseBonus, 400, () => {
                                     setTimeout(() => {
                                         state.scoreModal.step = 4;
-                                        animateScoreValue(state.scoreModal.currentScore, state.scoreModal.currentScore - state.scoreModal.damagePenalty, 800, () => {
+                                        animateScoreValue(state.scoreModal.currentScore, state.scoreModal.currentScore - state.scoreModal.damagePenalty, 400, () => {
                                             setTimeout(() => {
                                                 state.scoreModal.step = 5;
-                                            }, 600);
+                                            }, 300);
                                         });
-                                    }, 800);
+                                    }, 400);
                                 });
-                            }, 800);
+                            }, 400);
                         });
-                    }, 800);
+                    }, 400);
                 });
-            }, 1000);
+            }, 500);
         };
 
         const runFinanceModal = (cb) => {
@@ -791,7 +791,7 @@ const app = createApp({
                     if (navigator.canShare({ files: [file] })) {
                         await navigator.share({
                             title: 'CISO Simulator',
-                            text: window.t('ui.share_text', state.lang) || 'Meu resultado como CISO corporativo! Jogue e teste suas habilidades.',
+                            text: window.t('ui.share_text', state.lang) !== 'ui.share_text' ? window.t('ui.share_text', state.lang) : 'Meu resultado como CISO corporativo! Jogue e teste suas habilidades. https://ciso-simulator.risuenho.com/',
                             files: [file]
                         });
                         return;

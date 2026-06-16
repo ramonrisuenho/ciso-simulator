@@ -114,6 +114,7 @@ window.i18n = {
             end_score: "SCORE FINAL DE CARREIRA",
             end_share: "Compartilhar",
             end_new: "Nova Empresa",
+            share_text: "Meu resultado como CISO corporativo! Jogue e teste suas habilidades. https://ciso-simulator.risuenho.com/ 💼🛡️",
             cons_title: "PROJETO DE CONSULTORIA (FIM DO H1)",
             cons_btn: "EXCELENTE",
             cons_msg: "A Consultoria Trimestral analisou sua postura de segurança.",
@@ -502,6 +503,7 @@ window.i18n = {
             end_score: "FINAL CAREER SCORE",
             end_share: "Share",
             end_new: "New Company",
+            share_text: "My result as a corporate CISO! Play and test your skills. https://ciso-simulator.risuenho.com/ 💼🛡️",
             cons_title: "CONSULTING PROJECT (END OF H1)",
             cons_btn: "EXCELLENT",
             cons_msg: "The Quarterly Consultancy has analyzed your security posture.",
@@ -775,12 +777,12 @@ window.i18n = {
     }
 };
 
-window.t = function(key, lang) {
+window.t = function (key, lang) {
     if (!lang) lang = 'pt';
     const keys = key.split('.');
     let val = window.i18n[lang];
     if (!val) return key;
-    
+
     for (const k of keys) {
         if (!val) break;
         val = val[k];

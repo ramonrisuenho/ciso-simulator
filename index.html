@@ -159,7 +159,7 @@
         </transition>
 
         <!-- TOP SECTION (Header) -->
-        <header class="glass-panel relative border-b border-cyber-primary/20 p-4 pb-6 md:h-28 md:px-6 shadow-glow z-30 shrink-0 grid grid-cols-2 md:flex md:items-center md:justify-between gap-y-4 gap-x-2 md:gap-4">
+        <header class="glass-panel relative border-b border-cyber-primary/20 p-4 md:h-28 md:px-6 shadow-glow z-30 shrink-0 grid grid-cols-2 md:flex md:items-center md:justify-between gap-y-4 gap-x-2 md:gap-4">
             <!-- Timeline -->
             <div class="flex flex-col md:flex-1 md:max-w-sm">
                 <div class="text-[10px] text-cyber-muted font-bold tracking-widest uppercase mb-1 flex items-center gap-1">
@@ -220,7 +220,7 @@
             </div>
 
             <!-- Creator Mention -->
-            <div class="absolute bottom-1 right-2 md:right-4 text-[9px] md:text-[10px] text-cyber-muted z-10 opacity-70 hover:opacity-100 transition-opacity">
+            <div class="col-span-2 md:absolute md:bottom-2 md:right-4 flex justify-end items-center text-[9px] md:text-[10px] text-cyber-muted z-10 opacity-70 hover:opacity-100 transition-opacity mt-2 md:mt-0">
                 <a href="https://www.linkedin.com/in/ramonrisuenho/" target="_blank" title="LinkedIn Profile" class="flex items-center gap-1 hover:text-cyber-primary transition-colors">
                     <span>Criado por Ramon Risuenho</span>
                     <i class="bi bi-linkedin text-[#0077b5]"></i>
@@ -289,7 +289,7 @@
                             </li>
                         </ul>
                     </div>
-                    <button @click="startGame" class="font-heading text-lg sm:text-xl font-bold uppercase tracking-widest text-cyber-bg bg-cyber-primary px-8 py-4 w-[90%] sm:w-auto rounded-sm hover:bg-white hover:shadow-neon transition-all duration-300 transform hover:scale-105">
+                    <button @click="startGame" class="font-heading text-lg sm:text-xl font-bold uppercase tracking-widest text-cyber-bg bg-cyber-primary px-8 py-4 w-[90%] sm:w-auto rounded-sm hover:bg-white hover:shadow-neon transition-all duration-300 transform hover:scale-105 mb-12">
                         {{ t('ui.start', state.lang) }}
                     </button>
                     </div>
@@ -342,7 +342,7 @@
                         </div>
                     </div>
 
-                    <div v-if="state.scoreModal.step >= 5" class="flex flex-col sm:flex-row gap-4 justify-center relative z-10 mt-6 w-full px-2">
+                    <div v-if="state.scoreModal.step >= 5" class="flex flex-col sm:flex-row gap-4 justify-center relative z-10 mt-6 w-full px-2" data-html2canvas-ignore="true">
                         <button @click="shareScore" class="w-full sm:w-auto font-heading font-bold uppercase tracking-widest text-xs sm:text-sm text-cyber-bg px-6 py-3 bg-cyber-secondary hover:bg-white rounded transition-all flex items-center justify-center gap-2">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-share-fill" viewBox="0 0 16 16">
                               <path d="M11 2.5a2.5 2.5 0 1 1 .603 1.628l-6.718 3.12a2.499 2.499 0 0 1 0 1.504l6.718 3.12a2.5 2.5 0 1 1-.488.876l-6.718-3.12a2.5 2.5 0 1 1 0-3.256l6.718-3.12A2.5 2.5 0 0 1 11 2.5z"/>
@@ -359,20 +359,20 @@
 
                 <!-- GAME BOARD (Draft Cards) -->
                 <div v-else-if="state.gameStarted && !state.gameEnded" class="h-full flex flex-col relative overflow-hidden">
-                    <div class="mb-5 flex-shrink-0 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
-                        <div class="w-full md:w-auto break-words pr-4">
-                            <h2 class="font-heading text-2xl md:text-3xl font-bold text-white tracking-widest uppercase mb-1 leading-tight">{{ t('ui.market', state.lang) }}</h2>
-                            <p class="text-sm text-cyber-muted">{{ t('ui.market_desc', state.lang) }}</p>
+                    <div class="flex-1 overflow-y-auto overflow-x-hidden w-full relative pt-2 custom-scrollbar">
+                        <div class="mb-5 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+                            <div class="w-full md:w-auto break-words pr-4">
+                                <h2 class="font-heading text-2xl md:text-3xl font-bold text-white tracking-widest uppercase mb-1 leading-tight">{{ t('ui.market', state.lang) }}</h2>
+                                <p class="text-sm text-cyber-muted">{{ t('ui.market_desc', state.lang) }}</p>
+                            </div>
+                            <button @click="advancePhase" :disabled="!canAdvance" 
+                                    class="hidden md:block w-full md:w-auto font-heading text-sm font-bold uppercase tracking-widest text-cyber-secondary border-2 border-cyber-secondary px-6 py-3 md:py-2 rounded hover:bg-cyber-secondary hover:text-cyber-bg hover:shadow-neon-secondary transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed text-center whitespace-normal mb-4 md:mb-0">
+                                {{ t('ui.next_quarter', state.lang) }}
+                            </button>
                         </div>
-                        <button @click="advancePhase" :disabled="!canAdvance" 
-                                class="hidden md:block w-full md:w-auto font-heading text-sm font-bold uppercase tracking-widest text-cyber-secondary border-2 border-cyber-secondary px-6 py-3 md:py-2 rounded hover:bg-cyber-secondary hover:text-cyber-bg hover:shadow-neon-secondary transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed text-center whitespace-normal">
-                            {{ t('ui.next_quarter', state.lang) }}
-                        </button>
-                    </div>
 
-                    <!-- DRAFT CARDS GRID -->
-                    <div class="flex-1 overflow-y-auto overflow-x-hidden w-full relative pt-2">
-                        <transition-group name="list" tag="div" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 w-full pb-4">
+                        <!-- DRAFT CARDS GRID -->
+                        <transition-group name="list" tag="div" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 w-full pb-16">
                             <div v-for="card in state.marketCards" :key="card.id" 
                                  class="glass-panel rounded flex flex-col transition-all duration-300 relative group overflow-hidden border border-cyber-primary/20 hover:border-cyber-primary hover:shadow-neon transform hover:-translate-y-2 flex-1 min-h-[300px] md:min-h-[360px]">
                                 
@@ -603,8 +603,8 @@
     </div>
 
     <!-- Scripts -->
-    <script src="js/i18n.js"></script>
-    <script src="js/data.js"></script>
-    <script src="js/app.js"></script>
+    <script src="js/i18n.js?v=2"></script>
+    <script src="js/data.js?v=2"></script>
+    <script src="js/app.js?v=2"></script>
 </body>
 </html>
