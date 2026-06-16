@@ -36,21 +36,10 @@ O código está isolado e componentizado nas melhores práticas arquiteturais.
 └── README.md           # Você está aqui!
 ```
 
-## 🌐 Instalação e Execução (Live)
-
-Nenhuma instalação de dependências via npm é exigida.
-
-1. Faça o clone do repositório:
-   ```bash
-   git clone https://github.com/seu-usuario/ciso-game.git
-   ```
-2. Você pode rodar de duas formas:
-   - **Local:** Abra o arquivo `index.html` em qualquer navegador moderno.
-   - **Web Server:** Abra a pasta do projeto via VS Code e inicie com a extensão *Live Server* ou faça deploy no *GitHub Pages* diretamente pela aba Settings -> Pages.
 
 ## 🌍 Suporte a Multi-Idioma
 
 O projeto suporta internacionalização out-of-the-box (`i18n.js`). Por padrão a interface do usuário suporta perfeitamente **Português do Brasil (PT-BR)** e **Inglês Norte-Americano (EN-US)**, afetando todos os menus, botões, descrições de cartas, eventos dinâmicos e resultados de pontuação.
 
 ## 🤝 Créditos
-Desenvolvido via pair-programming assistido por Inteligência Artificial (Agent AI). A arquitetura UI/UX adota um design arrojado e "Neon" para gamificar o estressante - e incrivelmente importante - papel da cibersegurança global nas empresas atuais.
+Desenvolvido via pair-programming assistido por Inteligência Artificial (Agent AI [Gemini 3.1 Pro]). A arquitetura UI/UX adota um design arrojado e "Neon" para gamificar o estressante - e incrivelmente importante - papel da cibersegurança global nas empresas atuais.
