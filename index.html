@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CISO Simulator</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            bg: '#050608',
+                            panel: 'rgba(10, 14, 23, 0.8)',
+                            primary: '#00ffcc',
+                            secondary: '#ff00ff',
+                            accent: '#fcee0a',
+                            danger: '#ff3366',
+                            success: '#33ff77',
+                            muted: '#8a94a5'
+                        }
+                    },
+                    fontFamily: {
+                        heading: ['Orbitron', 'sans-serif'],
+                        body: ['Inter', 'sans-serif']
+                    },
+                    boxShadow: {
+                        'neon': '0 0 15px rgba(0, 255, 204, 0.4), inset 0 0 10px rgba(0, 255, 204, 0.1)',
+                        'neon-secondary': '0 0 15px rgba(255, 0, 255, 0.4)',
+                        'glow': '0 0 20px rgba(0, 255, 204, 0.2)'
+                    },
+                    backgroundImage: {
+                        'grid': 'linear-gradient(rgba(0, 255, 204, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 255, 204, 0.05) 1px, transparent 1px)'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { background-color: #050608; overflow: hidden; }
+        .bg-grid { background-size: 40px 40px; }
+        .glass-panel {
+            background: rgba(10, 14, 23, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        [v-cloak] { display: none; }
+
+        /* Vue Animations */
+        .list-enter-active {
+            transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .list-leave-active {
+            transition: all 0.3s ease;
+        }
+        .list-enter-from {
+            opacity: 0;
+            transform: translateY(40px) scale(0.95);
+        }
+        .list-leave-to {
+            opacity: 0;
+            transform: translateY(-20px) scale(0.95);
+        }
+
+        .active-list-enter-active, .active-list-leave-active {
+            transition: all 0.4s ease;
+        }
+        .active-list-enter-from, .active-list-leave-to {
+            opacity: 0;
+            transform: scale(0.9);
+        }
+
+        .sweep-enter-active, .sweep-leave-active {
+            transition: opacity 0.4s ease;
+        }
+        .sweep-enter-from, .sweep-leave-to {
+            opacity: 0;
+        }
+        
+        /* Glitch Effect */
+        .glitch-text {
+            position: relative;
+            color: #00ffcc;
+        }
+        .glitch-text::before, .glitch-text::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        .glitch-text::before {
+            left: 2px;
+            text-shadow: -2px 0 #ff00ff;
+            clip: rect(24px, 550px, 90px, 0);
+            animation: glitch-anim-2 3s infinite linear alternate-reverse;
+        }
+        .glitch-text::after {
+            left: -2px;
+            text-shadow: -2px 0 #fcee0a;
+            clip: rect(85px, 550px, 140px, 0);
+            animation: glitch-anim 2.5s infinite linear alternate-reverse;
+        }
+        @keyframes glitch-anim {
+            0% { clip: rect(20px, 9999px, 86px, 0); }
+            20% { clip: rect(62px, 9999px, 14px, 0); }
+            40% { clip: rect(100px, 9999px, 53px, 0); }
+            60% { clip: rect(32px, 9999px, 89px, 0); }
+            80% { clip: rect(74px, 9999px, 4px, 0); }
+            100% { clip: rect(12px, 9999px, 66px, 0); }
+        }
+        @keyframes glitch-anim-2 {
+            0% { clip: rect(65px, 9999px, 100px, 0); }
+            20% { clip: rect(3px, 9999px, 48px, 0); }
+            40% { clip: rect(88px, 9999px, 20px, 0); }
+            60% { clip: rect(20px, 9999px, 99px, 0); }
+            80% { clip: rect(50px, 9999px, 77px, 0); }
+            100% { clip: rect(8px, 9999px, 11px, 0); }
+        }
+    </style>
+
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- HTML2Canvas for sharing -->
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+</head>
+<body class="text-gray-200 font-body h-screen w-screen bg-grid overflow-hidden">
+    
+    <div id="app" v-cloak class="w-full h-full flex flex-col relative z-10 overflow-hidden">
+        
+        <!-- SWEEP TRANSITION OVERLAY -->
+        <transition name="sweep">
+            <div v-if="state.transitioning" class="fixed inset-0 z-[100] bg-cyber-bg/95 backdrop-blur-sm flex flex-col items-center justify-center border-y-4 border-cyber-primary">
+                <div class="w-full h-1 bg-cyber-primary/20 mb-8 overflow-hidden relative">
+                    <div class="absolute top-0 left-0 h-full w-1/3 bg-cyber-primary animate-pulse shadow-glow"></div>
+                </div>
+                <h1 class="text-3xl sm:text-5xl md:text-7xl font-heading font-black uppercase tracking-[0.1em] md:tracking-[0.2em] glitch-text text-center px-4 break-words" :data-text="state.transitionText">
+                    {{ state.transitionText }}
+                </h1>
+                <div class="w-full h-1 bg-cyber-primary/20 mt-8 overflow-hidden relative">
+                    <div class="absolute top-0 right-0 h-full w-1/3 bg-cyber-primary animate-pulse shadow-glow"></div>
+                </div>
+            </div>
+        </transition>
+
+        <!-- TOP SECTION (Header) -->
+        <header class="glass-panel border-b border-cyber-primary/20 p-4 md:h-20 md:px-6 shadow-glow z-30 shrink-0 grid grid-cols-2 md:flex md:items-center md:justify-between gap-y-4 gap-x-2 md:gap-4">
+            <!-- Timeline -->
+            <div class="flex flex-col md:flex-1 md:max-w-sm">
+                <div class="text-[10px] text-cyber-muted font-bold tracking-widest uppercase mb-1 flex items-center gap-1">
+                    <i class="bi bi-clock-history"></i> {{ t('ui.timeline', state.lang) }}
+                </div>
+                <div class="font-heading text-xl font-bold text-cyber-primary drop-shadow-[0_0_8px_rgba(0,255,204,0.6)]">
+                    {{ t('ui.year_prefix', state.lang) }} {{ state.currentYear }} - {{ state.currentQuarter }}
+                </div>
+                <div class="w-full h-1.5 bg-gray-800 rounded-full mt-1 overflow-hidden flex">
+                    <div class="h-full bg-cyber-primary transition-all duration-500" 
+                         :class="{'w-1/4': state.currentQuarter === 'Q1', 'w-2/4': state.currentQuarter === 'Q2', 'w-3/4': state.currentQuarter === 'Q3', 'w-full': state.currentQuarter === 'Q4'}">
+                    </div>
+                </div>
+            </div>
+
+            <!-- FTEs -->
+            <div class="flex flex-col items-end md:items-center md:flex-1 md:max-w-sm md:border-l md:border-r border-gray-800 md:px-4">
+                <span class="text-[10px] text-cyber-muted font-bold tracking-widest uppercase mb-1 flex items-center gap-1"><i class="bi bi-people-fill"></i> {{ t('ui.capacity', state.lang) }}</span>
+                <span class="font-heading text-2xl font-bold transition-colors duration-300"
+                      :class="state.fteCurrent === 0 ? 'text-cyber-danger' : 'text-white'">
+                    {{ state.fteCurrent }} <span class="text-gray-500 text-lg">/ {{ state.fteMax }}</span>
+                </span>
+                <div class="flex gap-4 mt-0.5 text-[10px] text-cyber-muted">
+                    <span>FTEs Livres</span>
+                </div>
+            </div>
+
+            <!-- Maturity -->
+            <div class="flex flex-col md:items-center md:flex-1 md:max-w-sm">
+                <span class="text-[10px] text-cyber-muted font-bold tracking-widest uppercase mb-1 flex items-center gap-1"><i class="bi bi-graph-up-arrow"></i> {{ t('ui.maturity_level', state.lang) }} {{ displayIgLevel }}</span>
+                <div class="font-heading text-2xl font-bold text-white">
+                    {{ displayState.maturityPoints }} <span class="text-sm text-gray-500">/ 100</span>
+                </div>
+                <div class="text-[10px] mt-0.5 text-cyber-accent">
+                    {{ t('ui.target', state.lang) }}: {{ state.targetMaturity }} pts
+                </div>
+            </div>
+
+            <!-- Money -->
+            <div class="flex flex-col items-end md:items-center md:flex-1">
+                <span class="text-[10px] text-cyber-muted font-bold tracking-widest uppercase mb-1 flex items-center gap-1"><i class="bi bi-safe-fill"></i> {{ t('ui.budget', state.lang) }}</span>
+                <span class="font-heading text-2xl font-bold transition-colors duration-300"
+                      :class="state.cyberCoins < 0 ? 'text-cyber-danger drop-shadow-[0_0_10px_rgba(255,51,102,0.8)]' : 'text-cyber-success drop-shadow-[0_0_10px_rgba(51,255,119,0.8)]'">
+                    ${{ displayState.cyberCoins }}
+                </span>
+                <div class="flex gap-2 sm:gap-4 mt-0.5 text-[10px] text-cyber-muted">
+                    <span>OpEx: <span class="text-gray-300">${{ displayState.accumulatedOpEx }}</span></span>
+                    <span>Renov: <span class="text-gray-300">${{ displayState.accumulatedRenewal }}</span></span>
+                </div>
+            </div>
+
+            <!-- Mobile Button -->
+            <div class="col-span-2 md:hidden pt-2" v-if="state.gameStarted && !state.gameEnded">
+                <button @click="advancePhase" :disabled="!canAdvance" 
+                        class="w-full font-heading text-sm font-bold uppercase tracking-widest text-cyber-secondary border-2 border-cyber-secondary px-6 py-3 rounded hover:bg-cyber-secondary hover:text-cyber-bg hover:shadow-neon-secondary transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed text-center">
+                    {{ t('ui.next_quarter', state.lang) }}
+                </button>
+            </div>
+        </header>
+
+        <!-- SUB HEADER: Active Solutions (Top) -->
+        <div v-if="state.gameStarted || state.gameEnded" class="hidden md:flex h-12 bg-black/80 border-b border-cyber-primary/10 items-center px-6 gap-4 z-10 shrink-0 overflow-hidden">
+            <span class="text-xs text-cyber-muted font-bold tracking-widest uppercase shrink-0">Soluções Ativas:</span>
+            <transition-group name="active-list" tag="div" class="flex gap-2 items-center w-full overflow-hidden">
+                <div v-for="card in state.activeCards" :key="card.id" 
+                     class="bg-cyber-bg border border-cyber-primary/40 text-cyber-primary px-3 py-1 rounded shadow-[0_0_5px_rgba(0,255,204,0.1)] text-xs font-bold flex items-center gap-2 whitespace-nowrap">
+                    <span class="w-1.5 h-1.5 rounded-full bg-cyber-primary animate-pulse"></span>
+                    {{ card.name }}
+                </div>
+            </transition-group>
+            <div v-if="state.activeCards.length === 0" class="text-xs text-gray-600 italic">Nenhuma solução adquirida ainda.</div>
+        </div>
+
+        <!-- MAIN AREA -->
+        <main class="flex-1 flex flex-col md:flex-row overflow-hidden relative">
+            
+            <!-- LEFT SECTION -->
+            <section class="w-full md:w-[70%] h-full p-4 md:p-6 flex flex-col border-r border-cyber-primary/10 overflow-hidden relative">
+                
+                <!-- START SCREEN -->
+                <div v-if="!state.gameStarted && !state.gameEnded" class="h-full overflow-y-auto w-full custom-scrollbar">
+                    <div class="flex flex-col items-center justify-center min-h-full p-4 md:p-8 text-center max-w-3xl mx-auto w-full">
+                        
+                    <div class="mb-12 border border-cyber-primary/30 p-4 rounded bg-black/40 backdrop-blur-md flex items-center gap-4 shadow-glow">
+                        <span class="text-cyber-muted text-sm uppercase tracking-widest font-bold">{{ t('ui.lang_label', state.lang) }}:</span>
+                        <select :value="state.lang" @change="changeLanguage($event.target.value)" class="bg-cyber-panel border border-gray-600 text-white text-sm rounded focus:ring-cyber-primary focus:border-cyber-primary block p-2 cursor-pointer outline-none">
+                            <option value="pt">Português (PT-BR)</option>
+                            <option value="en">English (EN-US)</option>
+                        </select>
+                    </div>
+
+                    <h1 class="font-heading text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-6 tracking-widest drop-shadow-[0_0_15px_rgba(255,255,255,0.4)] break-words">
+                        {{ t('ui.title', state.lang) }} <br class="sm:hidden" /><span class="text-cyber-primary">{{ t('ui.subtitle', state.lang) }}</span>
+                    </h1>
+                    <p class="text-base sm:text-lg text-gray-400 leading-relaxed mb-8 px-2">
+                        {{ t('ui.intro_desc', state.lang) }}
+                    </p>
+
+                    <div class="bg-black/50 border border-cyber-primary/20 p-4 sm:p-6 rounded text-left mb-10 max-w-2xl mx-auto shadow-[0_0_15px_rgba(0,255,204,0.1)]">
+                        <h3 class="text-cyber-primary font-heading font-bold tracking-widest uppercase mb-4 flex items-center gap-2">
+                            <i class="bi bi-info-circle-fill"></i> {{ t('ui.tutorial_title', state.lang) }}
+                        </h3>
+                        <ul class="text-sm text-gray-300 space-y-3">
+                            <li class="flex items-start gap-2">
+                                <i class="bi bi-1-square text-cyber-secondary mt-0.5"></i>
+                                <span>{{ t('ui.tutorial_1', state.lang) }}</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <i class="bi bi-2-square text-cyber-secondary mt-0.5"></i>
+                                <span>{{ t('ui.tutorial_2', state.lang) }}</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <i class="bi bi-3-square text-cyber-secondary mt-0.5"></i>
+                                <span>{{ t('ui.tutorial_3', state.lang) }}</span>
+                            </li>
+                            <li class="flex items-start gap-2 text-cyber-accent">
+                                <i class="bi bi-exclamation-triangle-fill mt-0.5"></i>
+                                <span class="font-bold">{{ t('ui.tutorial_4', state.lang) }}</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <button @click="startGame" class="font-heading text-lg sm:text-xl font-bold uppercase tracking-widest text-cyber-bg bg-cyber-primary px-8 py-4 w-[90%] sm:w-auto rounded-sm hover:bg-white hover:shadow-neon transition-all duration-300 transform hover:scale-105">
+                        {{ t('ui.start', state.lang) }}
+                    </button>
+                    </div>
+                </div>
+
+
+            <div v-else-if="state.gameEnded" class="h-full overflow-y-auto w-full">
+                <div class="flex flex-col items-center justify-center min-h-full p-4 md:p-8 max-w-4xl mx-auto w-full">
+                <div id="score-board" class="bg-cyber-panel border-2 rounded-lg p-6 md:p-8 text-center w-full shadow-glow relative overflow-hidden" :class="state.isVictory ? 'border-cyber-success shadow-[0_0_30px_rgba(51,255,119,0.3)]' : 'border-cyber-danger shadow-[0_0_30px_rgba(255,51,102,0.3)]'">
+                    
+                    <div class="absolute -top-20 -right-20 w-64 h-64 rounded-full blur-[100px] opacity-30" :class="state.isVictory ? 'bg-cyber-success' : 'bg-cyber-danger'"></div>
+                    
+                    <h2 class="font-heading text-4xl font-bold text-white mb-2 tracking-widest uppercase">
+                        {{ state.isVictory ? t('ui.end_victory', state.lang) : t('ui.end_defeat', state.lang) }}
+                    </h2>
+                    <p class="text-gray-400 mb-8 max-w-2xl mx-auto">
+                        {{ state.isVictory ? t('ui.end_victory_desc', state.lang) : t('ui.end_defeat_desc', state.lang) }}
+                    </p>
+                    
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 relative z-10">
+                        <div class="bg-black/50 border border-gray-800 p-4 rounded text-center transition-all duration-500" :class="{'opacity-50': state.scoreModal.step < 1, 'border-cyber-primary shadow-[0_0_15px_rgba(0,255,204,0.3)]': state.scoreModal.step >= 1}">
+                            <div class="text-[10px] text-cyber-muted uppercase tracking-widest mb-2">{{ t('ui.end_base', state.lang) }}</div>
+                            <div class="font-heading text-2xl font-bold text-white mb-1">{{ state.scoreModal.step >= 1 ? state.maturityPoints * 10 : 0 }}</div>
+                            <div class="text-xs text-cyber-primary">{{ state.maturityPoints }} {{ t('ui.end_pts_x10', state.lang) }}</div>
+                        </div>
+                        
+                        <div class="bg-black/50 border border-gray-800 p-4 rounded text-center transition-all duration-500" :class="{'opacity-50': state.scoreModal.step < 2, 'border-cyber-success shadow-[0_0_15px_rgba(51,255,119,0.3)]': state.scoreModal.step >= 2}">
+                            <div class="text-[10px] text-cyber-muted uppercase tracking-widest mb-2">{{ t('ui.end_savings', state.lang) }}</div>
+                            <div class="font-heading text-2xl font-bold text-cyber-success mb-1">+{{ state.scoreModal.step >= 2 ? state.scoreModal.savingsBonus : 0 }}</div>
+                            <div class="text-xs text-gray-500">{{ t('ui.end_pts_50', state.lang) }}</div>
+                        </div>
+                        
+                        <div class="bg-black/50 border border-gray-800 p-4 rounded text-center transition-all duration-500" :class="{'opacity-50': state.scoreModal.step < 3, 'border-cyber-success shadow-[0_0_15px_rgba(51,255,119,0.3)]': state.scoreModal.step >= 3}">
+                            <div class="text-[10px] text-cyber-muted uppercase tracking-widest mb-2">{{ t('ui.end_defenses', state.lang) }} ({{ state.stats.eventsDefended }})</div>
+                            <div class="font-heading text-2xl font-bold text-cyber-success mb-1">+{{ state.scoreModal.step >= 3 ? state.scoreModal.defenseBonus : 0 }}</div>
+                            <div class="text-xs text-gray-500">{{ t('ui.end_pts_defense', state.lang) }}</div>
+                        </div>
+                        
+                        <div class="bg-black/50 border border-gray-800 p-4 rounded text-center transition-all duration-500" :class="{'opacity-50': state.scoreModal.step < 4, 'border-cyber-danger shadow-[0_0_15px_rgba(255,51,102,0.3)]': state.scoreModal.step >= 4}">
+                            <div class="text-[10px] text-cyber-muted uppercase tracking-widest mb-2">{{ t('ui.end_impacts', state.lang) }} ({{ state.stats.eventsSuffered }})</div>
+                            <div class="font-heading text-2xl font-bold text-cyber-danger mb-1">-{{ state.scoreModal.step >= 4 ? state.scoreModal.damagePenalty : 0 }}</div>
+                            <div class="text-xs text-gray-500">{{ t('ui.end_pts_impact', state.lang) }}</div>
+                        </div>
+                    </div>
+
+                    <div class="mb-8 p-6 bg-black/80 border border-gray-700 rounded transition-all duration-1000 relative z-10 w-full" :class="{'opacity-0 scale-95': state.scoreModal.step < 1, 'opacity-100 scale-100 border-white shadow-[0_0_30px_rgba(255,255,255,0.2)]': state.scoreModal.step >= 5}">
+                        <div class="text-sm text-cyber-muted uppercase tracking-widest mb-2">{{ t('ui.end_score', state.lang) }}</div>
+                        <div class="font-heading text-5xl md:text-7xl font-bold text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.5)] break-words">
+                            {{ state.scoreModal.currentScore }}
+                        </div>
+                    </div>
+
+                    <div v-if="state.scoreModal.step >= 5" class="flex flex-col sm:flex-row gap-4 justify-center relative z-10 mt-6 w-full px-2">
+                        <button @click="shareScore" class="w-full sm:w-auto font-heading font-bold uppercase tracking-widest text-xs sm:text-sm text-cyber-bg px-6 py-3 bg-cyber-secondary hover:bg-white rounded transition-all flex items-center justify-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-share-fill" viewBox="0 0 16 16">
+                              <path d="M11 2.5a2.5 2.5 0 1 1 .603 1.628l-6.718 3.12a2.499 2.499 0 0 1 0 1.504l6.718 3.12a2.5 2.5 0 1 1-.488.876l-6.718-3.12a2.5 2.5 0 1 1 0-3.256l6.718-3.12A2.5 2.5 0 0 1 11 2.5z"/>
+                            </svg>
+                            {{ t('ui.end_share', state.lang) }}
+                        </button>
+                        <button @click="startGame" class="w-full sm:w-auto font-heading font-bold uppercase tracking-widest text-xs sm:text-sm text-cyber-bg px-6 py-3 bg-cyber-primary hover:bg-white rounded transition-all">
+                            {{ t('ui.end_new', state.lang) }}
+                        </button>
+                    </div>
+                </div>
+                </div>
+            </div>
+
+                <!-- GAME BOARD (Draft Cards) -->
+                <div v-else-if="state.gameStarted && !state.gameEnded" class="h-full flex flex-col relative overflow-hidden">
+                    <div class="mb-5 flex-shrink-0 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+                        <div class="w-full md:w-auto break-words pr-4">
+                            <h2 class="font-heading text-2xl md:text-3xl font-bold text-white tracking-widest uppercase mb-1 leading-tight">{{ t('ui.market', state.lang) }}</h2>
+                            <p class="text-sm text-cyber-muted">{{ t('ui.market_desc', state.lang) }}</p>
+                        </div>
+                        <button @click="advancePhase" :disabled="!canAdvance" 
+                                class="hidden md:block w-full md:w-auto font-heading text-sm font-bold uppercase tracking-widest text-cyber-secondary border-2 border-cyber-secondary px-6 py-3 md:py-2 rounded hover:bg-cyber-secondary hover:text-cyber-bg hover:shadow-neon-secondary transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed text-center whitespace-normal">
+                            {{ t('ui.next_quarter', state.lang) }}
+                        </button>
+                    </div>
+
+                    <!-- DRAFT CARDS GRID -->
+                    <div class="flex-1 overflow-y-auto overflow-x-hidden w-full relative pt-2">
+                        <transition-group name="list" tag="div" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 w-full pb-4">
+                            <div v-for="card in state.marketCards" :key="card.id" 
+                                 class="glass-panel rounded flex flex-col transition-all duration-300 relative group overflow-hidden border border-cyber-primary/20 hover:border-cyber-primary hover:shadow-neon transform hover:-translate-y-2 flex-1 min-h-[300px] md:min-h-[360px]">
+                                
+                                <div class="absolute top-0 right-0 font-heading font-bold px-2 py-1 text-[11px] text-cyber-bg rounded-bl flex items-center gap-1"
+                                     :class="card.type === 'TECH' ? 'bg-cyber-primary' : (card.type === 'SERVICE' ? 'bg-cyber-secondary' : 'bg-cyber-accent')">
+                                    <i class="bi" :class="card.type === 'TECH' ? 'bi-cpu-fill' : (card.type === 'SERVICE' ? 'bi-shield-check' : 'bi-journal-check')"></i> {{ t('ui.types.' + card.type, state.lang) || card.type }}
+                                </div>
+                                
+                                <div class="p-4 flex-1 flex flex-col">
+                                    <h3 class="font-heading text-base font-bold text-white mt-3 group-hover:text-cyber-primary transition-colors leading-tight mb-2">{{ t('cards.' + card.id + '.name', state.lang) !== 'cards.' + card.id + '.name' ? t('cards.' + card.id + '.name', state.lang) : card.name }}</h3>
+                                    <p class="text-[11px] text-cyber-muted mb-3 pb-2 border-b border-gray-700">{{ t('ui.domains', state.lang) }}: {{ card.domains.join(', ') }}</p>
+                                    
+                                    <div class="flex justify-between text-xs mb-1">
+                                        <span class="text-cyber-accent font-bold">{{ t('ui.cost', state.lang) }}:</span>
+                                        <span class="font-bold text-cyber-accent">${{ card.cost }}</span>
+                                    </div>
+                                    <div class="flex justify-between text-xs mb-1" :class="card.renewal > 0 ? 'text-cyber-danger' : 'text-gray-500'">
+                                        <span class="font-bold">{{ t('ui.renewal', state.lang) }}:</span>
+                                        <span class="font-bold">${{ card.renewal }}{{ t('ui.year_suffix', state.lang) }}</span>
+                                    </div>
+                                    <div class="flex justify-between text-xs mb-3 text-cyber-success">
+                                        <span class="font-bold">{{ t('ui.maturity_bonus', state.lang) }}:</span>
+                                        <span class="font-bold">+{{ card.points }} pts</span>
+                                    </div>
+                                    <div v-if="card.fteCost" class="flex justify-between text-xs mb-3 text-cyber-secondary border-t border-gray-700 pt-2">
+                                        <span class="font-bold">{{ t('ui.fte_cost', state.lang) }}:</span>
+                                        <span class="font-bold text-white">{{ card.fteCost }} FTE</span>
+                                    </div>
+                                    <div v-if="card.fteProvide" class="flex justify-between text-xs mb-3 text-cyber-success border-t border-gray-700 pt-2">
+                                        <span class="font-bold">{{ t('ui.fte_provide', state.lang) }}:</span>
+                                        <span class="font-bold text-white">+{{ card.fteProvide }} FTE</span>
+                                    </div>
+                                    
+                                    <!-- Elevator Pitch & Benefit -->
+                                    <div class="flex-1 flex flex-col gap-3 mt-1 overflow-y-auto pr-1">
+                                        <div>
+                                            <span class="text-[10px] font-bold text-cyber-muted uppercase block mb-1 flex items-center gap-1"><i class="bi bi-info-circle"></i> {{ t('ui.explanation', state.lang) }}</span>
+                                            <p class="text-xs text-gray-300 leading-snug">{{ t('cards.' + card.id + '.explanation', state.lang) !== 'cards.' + card.id + '.explanation' ? t('cards.' + card.id + '.explanation', state.lang) : card.explanation }}</p>
+                                        </div>
+                                        <div>
+                                            <span class="text-[10px] font-bold text-cyber-primary uppercase block mb-1 flex items-center gap-1"><i class="bi bi-star-fill"></i> {{ t('ui.benefit', state.lang) }}</span>
+                                            <p class="text-xs text-cyber-primary/90 leading-snug font-semibold">{{ t('cards.' + card.id + '.benefit', state.lang) !== 'cards.' + card.id + '.benefit' ? t('cards.' + card.id + '.benefit', state.lang) : card.benefit }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <button @click="initiatePurchase(card)" 
+                                        :disabled="(state.cyberCoins < card.cost && card.type !== 'PROCESS') || state.fteCurrent < (card.fteCost || 0) || (card.id === 'proc_hiring' && state.fteMax >= 6)" 
+                                        class="w-full font-heading font-bold uppercase tracking-widest py-2 text-xs transition-all duration-300 shrink-0 flex items-center justify-center gap-2"
+                                        :class="(state.cyberCoins < card.cost && card.type !== 'PROCESS') || state.fteCurrent < (card.fteCost || 0) || (card.id === 'proc_hiring' && state.fteMax >= 6) ? 'bg-cyber-danger/80 text-white cursor-not-allowed' : 'bg-cyber-primary text-cyber-bg hover:bg-white'">
+                                    <i class="bi bi-cart-plus-fill" v-if="(state.cyberCoins >= card.cost || card.type === 'PROCESS') && state.fteCurrent >= (card.fteCost || 0) && !(card.id === 'proc_hiring' && state.fteMax >= 6)"></i>
+                                    {{ card.id === 'proc_hiring' && state.fteMax >= 6 ? t('ui.limit_reached', state.lang) : (state.fteCurrent < (card.fteCost || 0) ? t('ui.team_full', state.lang) : (state.cyberCoins < card.cost && card.type !== 'PROCESS' ? t('ui.no_funds', state.lang) : t('ui.buy', state.lang))) }}
+                                </button>
+
+                                <!-- Purchased Overlay -->
+                                <div v-if="card.purchased" class="absolute inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-10 animate-fade-in">
+                                    <span class="font-heading text-cyber-primary font-bold uppercase tracking-widest transform -rotate-12 border-2 border-cyber-primary px-3 py-1 text-sm flex items-center gap-2"><i class="bi bi-check-circle-fill"></i> {{ t('ui.purchased', state.lang) }}</span>
+                                </div>
+                            </div>
+                        </transition-group>
+                        
+                        <div v-if="state.marketCards.length === 0 && state.gameStarted && !state.transitioning" class="absolute inset-0 flex items-center justify-center text-cyber-muted text-sm glass-panel rounded border border-gray-800 h-20 m-auto">
+                            {{ t('ui.waiting_market', state.lang) }}
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- RIGHT SECTION (30%) - Dashboard -->
+            <section class="hidden md:flex w-[30%] h-full p-6 glass-panel border-l border-white/5 flex-col z-10 relative overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-b from-transparent to-black/50 pointer-events-none"></div>
+                
+                <div class="relative z-10 flex flex-col h-full">
+                    <h2 class="font-heading text-lg font-bold text-white mb-1 uppercase tracking-widest shrink-0"><i class="bi bi-speedometer2"></i> {{ t('ui.dashboard', state.lang) }}</h2>
+                    <p class="text-xs text-cyber-muted mb-4 shrink-0">{{ t('ui.dashboard_desc', state.lang) }}</p>
+                    
+                    <!-- Dynamic Chart Container -->
+                    <div class="flex-1 w-full bg-cyber-bg/80 border border-cyber-primary/20 rounded-lg p-3 shadow-inner relative min-h-[200px]">
+                        <div v-if="!state.gameStarted && !state.gameEnded" class="absolute inset-0 flex items-center justify-center text-cyber-muted text-xs text-center px-4">
+                            {{ t('ui.waiting_metrics', state.lang) }}
+                        </div>
+                        <canvas id="maturityChart" class="w-full h-full"></canvas>
+                    </div>
+
+                    <!-- Extra Stats -->
+                    <div v-if="state.gameStarted || state.gameEnded" class="mt-4 grid grid-cols-2 gap-3 shrink-0">
+                        <div class="bg-cyber-bg/50 border border-gray-800 rounded p-3 text-center">
+                            <div class="text-[10px] text-cyber-muted uppercase tracking-wider mb-1"><i class="bi bi-award-fill"></i> {{ t('ui.ig_level', state.lang) }}</div>
+                            <div class="font-heading text-xl font-bold" :class="{'text-cyber-success': displayIgLevel !== 'N/A', 'text-cyber-danger': displayIgLevel === 'N/A'}">{{ displayIgLevel }}</div>
+                        </div>
+                        <div class="bg-cyber-bg/50 border border-gray-800 rounded p-3 text-center">
+                            <div class="text-[10px] text-cyber-muted uppercase tracking-wider mb-1"><i class="bi bi-box-seam-fill"></i> {{ t('ui.total_solutions', state.lang) }}</div>
+                            <div class="font-heading text-xl font-bold text-white">{{ state.activeCards.length }}</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- GENERIC MODAL -->
+        <div v-if="state.modal.show" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4 sm:p-6 overflow-hidden">
+            <div class="bg-cyber-panel border-2 border-cyber-primary shadow-[0_0_20px_rgba(0,255,204,0.2)] rounded-lg p-6 md:p-8 max-w-4xl w-full max-h-[95vh] overflow-hidden flex flex-col text-center">
+                <div class="shrink-0 mb-4">
+                    <div v-if="state.modal.icon" class="text-4xl mb-3">{{ state.modal.icon }}</div>
+                    <h2 class="font-heading text-xl md:text-2xl font-bold text-white uppercase tracking-wider">{{ state.modal.title }}</h2>
+                </div>
+
+                <div class="flex-1 overflow-y-auto pr-1">
+                    <div class="text-gray-300 mb-5 text-sm sm:text-base leading-relaxed" v-html="state.modal.body"></div>
+
+                    <div v-if="state.modal.isQuiz && !state.modal.quizFeedback" class="flex flex-col gap-3 mb-5">
+                        <button v-for="(opt, idx) in state.modal.quizOptions" :key="idx" @click="answerQuiz(opt)" class="p-4 bg-black/60 border border-cyber-primary/30 rounded hover:border-cyber-primary hover:bg-cyber-primary/10 transition-all text-sm text-left text-gray-200 whitespace-normal leading-relaxed w-full shrink-0">
+                            {{ opt.text }}
+                        </button>
+                    </div>
+                    
+                    <div v-if="state.modal.quizFeedback" class="mb-5 p-5 rounded bg-black/50 border border-gray-700 text-sm md:text-base text-white text-left shrink-0" v-html="state.modal.quizFeedback"></div>
+                </div>
+
+                <div class="mt-4 shrink-0 pt-4 border-t border-gray-800">
+                    <button @click="hideModal" :disabled="state.modal.isQuiz && !state.modal.quizFeedback" 
+                            class="bg-cyber-primary text-cyber-bg font-heading font-bold uppercase tracking-widest px-10 py-3 rounded hover:bg-white transition-all w-full sm:w-auto shadow-glow disabled:opacity-50 disabled:cursor-not-allowed">
+                        {{ state.modal.btnText || t('ui.close', state.lang) }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- PURCHASE WARNING MODAL -->
+        <div v-if="state.purchaseModal.show" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
+            <div class="bg-cyber-panel border-2 rounded-lg p-6 max-w-md w-full text-center relative overflow-hidden flex flex-col max-h-[95vh]"
+                 :class="state.purchaseModal.isNegative ? 'border-cyber-danger shadow-[0_0_20px_rgba(255,51,102,0.3)]' : 'border-cyber-primary shadow-[0_0_20px_rgba(0,255,204,0.2)]'">
+                
+                <h2 class="shrink-0 font-heading text-lg md:text-xl font-bold text-white mb-4 uppercase tracking-wider"><i class="bi bi-cart-check-fill"></i> {{ t('ui.purchase_confirm', state.lang) }}</h2>
+                
+                <div class="flex-1 overflow-y-auto pr-1">
+                    <div class="bg-black/50 p-4 rounded border border-gray-800 text-left mb-6">
+                        <p class="text-sm text-gray-300 mb-2">{{ t('ui.solution', state.lang) }}: <strong class="text-white">{{ t('cards.' + state.purchaseModal.card?.id + '.name', state.lang) || state.purchaseModal.card?.name }}</strong></p>
+                        <p class="text-sm text-gray-300 mb-2">{{ t('ui.acquisition_cost', state.lang) }}: <strong class="text-cyber-accent">${{ state.purchaseModal.card?.cost }}</strong></p>
+                        <div class="w-full h-[1px] bg-gray-800 my-2"></div>
+                        <p class="text-sm text-gray-400 mb-1">{{ t('ui.current_balance', state.lang) }}: ${{ state.cyberCoins }}</p>
+                        <p class="text-sm text-gray-400 font-bold" :class="state.purchaseModal.isNegative ? 'text-cyber-danger' : 'text-cyber-success'">{{ t('ui.final_balance', state.lang) }}: ${{ state.purchaseModal.finalBalance }}</p>
+                    </div>
+
+                    <div v-if="state.purchaseModal.isNegative" class="mb-6 p-3 bg-cyber-danger/10 border border-cyber-danger/30 rounded text-xs text-cyber-danger text-left">
+                        <i class="bi bi-exclamation-triangle-fill"></i> {{ state.purchaseModal.card.type === 'PROCESS' ? t('ui.negative_warning_process', state.lang) : t('ui.negative_warning', state.lang) }}
+                    </div>
+                </div>
+
+                <div class="shrink-0 pt-4 flex flex-col sm:flex-row justify-center gap-3 border-t border-gray-800">
+                    <button @click="cancelPurchase" class="w-full sm:w-auto font-heading font-bold uppercase tracking-widest text-sm text-gray-400 border border-gray-600 px-6 py-2 rounded hover:bg-gray-800 hover:text-white transition-all"><i class="bi bi-x-lg"></i> {{ t('ui.cancel', state.lang) }}</button>
+                    <button @click="confirmPurchase" class="w-full sm:w-auto font-heading font-bold uppercase tracking-widest text-sm text-cyber-bg px-6 py-2 rounded transition-all shadow-glow"
+                            :class="state.purchaseModal.isNegative ? 'bg-cyber-danger hover:bg-red-400' : 'bg-cyber-primary hover:bg-white'">
+                        <i class="bi bi-check-lg"></i> {{ t('ui.confirm', state.lang) }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- FINANCE / CASH FLOW MODAL -->
+        <div v-if="state.financeModal.show" class="fixed inset-0 bg-black/95 backdrop-blur-md z-[60] flex items-center justify-center p-4">
+            <div class="bg-cyber-bg border border-cyber-primary p-6 md:p-8 w-full max-w-lg rounded shadow-glow text-center flex flex-col relative overflow-hidden max-h-[95vh]">
+                <!-- Decorative background elements -->
+                <div class="absolute -top-10 -right-10 w-32 h-32 bg-cyber-primary/10 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-cyber-secondary/10 rounded-full blur-3xl pointer-events-none"></div>
+                
+                <h2 class="shrink-0 font-heading text-xl md:text-2xl font-bold text-white mb-6 uppercase tracking-widest border-b border-gray-800 pb-4 relative z-10">{{ t('ui.fin_title', state.lang) }}</h2>
+                
+                <div class="flex-1 overflow-y-auto pr-1 relative z-10">
+                    <div class="flex flex-col gap-4 text-left font-heading text-xs sm:text-sm mb-6">
+                        <div class="flex justify-between items-center transition-all duration-700" :class="state.financeModal.step >= 0 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'">
+                            <span class="text-gray-400">{{ t('ui.fin_carry', state.lang) }}</span>
+                            <span class="font-bold" :class="state.financeModal.previousBalance < 0 ? 'text-cyber-danger' : 'text-white'">${{ state.financeModal.previousBalance }}</span>
+                        </div>
+
+                        <div class="flex justify-between items-center transition-all duration-700" :class="state.financeModal.step >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'">
+                            <span class="text-cyber-primary">{{ t('ui.fin_budget', state.lang) }}</span>
+                            <span class="font-bold text-cyber-primary">+${{ state.financeModal.base }}</span>
+                        </div>
+                        
+                        <div class="flex justify-between items-center transition-all duration-700" :class="state.financeModal.step >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'">
+                            <span class="text-cyber-danger">{{ t('ui.fin_opex', state.lang) }}</span>
+                            <span class="font-bold text-cyber-danger">-${{ state.financeModal.opex }}</span>
+                        </div>
+                        
+                        <div class="flex justify-between items-center transition-all duration-700" :class="state.financeModal.step >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'">
+                            <span class="text-cyber-danger">{{ t('ui.fin_renew', state.lang) }}</span>
+                            <span class="font-bold text-cyber-danger">-${{ state.financeModal.renewal }}</span>
+                        </div>
+                        
+                        <div class="flex justify-between items-center transition-all duration-700" :class="state.financeModal.step >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'">
+                            <span class="text-cyber-danger">{{ t('ui.fin_fte', state.lang) }}</span>
+                            <span class="font-bold text-cyber-danger">-${{ state.financeModal.payroll }}</span>
+                        </div>
+                        
+                        <div class="flex justify-between items-center transition-all duration-700" :class="state.financeModal.step >= 5 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'">
+                            <span class="text-cyber-success">{{ t('ui.fin_bonus', state.lang) }}</span>
+                            <span class="font-bold text-cyber-success">+${{ state.financeModal.bonus }}</span>
+                        </div>
+                        
+                        <div class="w-full h-px bg-gray-700 my-2 transition-all duration-700" :class="state.financeModal.step >= 6 ? 'opacity-100' : 'opacity-0'"></div>
+                        
+                        <div class="flex justify-between items-center transition-all duration-700" :class="state.financeModal.step >= 6 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'">
+                            <span class="text-cyber-primary font-bold uppercase tracking-wider text-base">{{ t('ui.fin_net', state.lang) }}</span>
+                            <span class="font-bold text-xl sm:text-2xl" :class="state.financeModal.finalBudget < 0 ? 'text-cyber-danger drop-shadow-[0_0_10px_rgba(255,51,102,0.8)]' : 'text-cyber-primary drop-shadow-[0_0_10px_rgba(0,255,204,0.8)]'">
+                                ${{ state.financeModal.finalBudget }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Animated Counter (Big) -->
+                    <div class="mb-4 sm:mb-8 font-heading font-black text-5xl sm:text-7xl transition-colors duration-300 relative z-10 flex justify-center items-center"
+                         :class="state.financeModal.currentDisplay < 0 ? 'text-cyber-danger drop-shadow-[0_0_20px_rgba(255,51,102,0.5)]' : 'text-cyber-primary drop-shadow-[0_0_20px_rgba(0,255,204,0.5)]'">
+                        ${{ state.financeModal.currentDisplay }}
+                    </div>
+                </div>
+
+                <div class="shrink-0 pt-4 border-t border-gray-800 relative z-10">
+                    <button @click="closeFinanceModal" :disabled="state.financeModal.step < 6" 
+                            class="w-full font-heading font-bold text-sm uppercase tracking-widest text-cyber-bg px-10 py-4 rounded transition-all duration-300"
+                            :class="state.financeModal.step < 6 ? 'bg-gray-600 cursor-not-allowed opacity-50' : 'bg-cyber-primary hover:bg-white shadow-neon'">
+                        {{ t('ui.fin_btn', state.lang) }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/i18n.js"></script>
+    <script src="js/data.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
