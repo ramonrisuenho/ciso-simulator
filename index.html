@@ -159,7 +159,7 @@
         </transition>
 
         <!-- TOP SECTION (Header) -->
-        <header class="glass-panel border-b border-cyber-primary/20 p-4 md:h-20 md:px-6 shadow-glow z-30 shrink-0 grid grid-cols-2 md:flex md:items-center md:justify-between gap-y-4 gap-x-2 md:gap-4">
+        <header class="glass-panel relative border-b border-cyber-primary/20 p-4 pb-6 md:h-28 md:px-6 shadow-glow z-30 shrink-0 grid grid-cols-2 md:flex md:items-center md:justify-between gap-y-4 gap-x-2 md:gap-4">
             <!-- Timeline -->
             <div class="flex flex-col md:flex-1 md:max-w-sm">
                 <div class="text-[10px] text-cyber-muted font-bold tracking-widest uppercase mb-1 flex items-center gap-1">
@@ -217,6 +217,14 @@
                         class="w-full font-heading text-sm font-bold uppercase tracking-widest text-cyber-secondary border-2 border-cyber-secondary px-6 py-3 rounded hover:bg-cyber-secondary hover:text-cyber-bg hover:shadow-neon-secondary transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed text-center">
                     {{ t('ui.next_quarter', state.lang) }}
                 </button>
+            </div>
+
+            <!-- Creator Mention -->
+            <div class="absolute bottom-1 right-2 md:right-4 text-[9px] md:text-[10px] text-cyber-muted z-10 opacity-70 hover:opacity-100 transition-opacity">
+                <a href="https://www.linkedin.com/in/ramonrisuenho/" target="_blank" title="LinkedIn Profile" class="flex items-center gap-1 hover:text-cyber-primary transition-colors">
+                    <span>Criado por Ramon Risuenho</span>
+                    <i class="bi bi-linkedin text-[#0077b5]"></i>
+                </a>
             </div>
         </header>
 
